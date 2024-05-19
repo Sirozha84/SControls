@@ -16,22 +16,25 @@ namespace SControls
     public partial class SList: UserControl
     {
         public enum Styles { Table, Lines, Icons }
-        
-        [Browsable(true)]
-        public Styles Style { get; set; }
 
         [Browsable(true)]
-        public List<Column> Columns { get; set; }
+        public Styles Style { get; set; } = Styles.Table;
+
+        [Browsable(true)]
+        public List<Column> Columns { get; set; } = new List<Column>();
+
+        [Browsable(true)]
+        public int HeadHeight { get; set; } = 24;
+
+        [Browsable(true)]
+        public List<SListItem> Items { get; set; } = new List<SListItem>();
 
         public event DrawDelegate Draw = null;
 
-        const int hh = 20;  //Высота шапки
         private StringFormat format = new StringFormat();
 
         public SList()
         {
-            Style = Styles.Table;
-            Columns = new List<Column>();
             InitializeComponent();
             DoubleBuffered = true;
             format.Alignment = StringAlignment.Center;
@@ -47,28 +50,39 @@ namespace SControls
         {
             base.OnPaint(e);
             Graphics g = e.Graphics;
-            int width = Width - 18; //1+17 - это ширина скролбарров, потом как-то красивше сделать
-            int height = Height - 38;   //1+20+17
-            Rectangle head = new Rectangle(0, 0, width, hh);
-            Rectangle field = new Rectangle(0, hh, width, height);
+            vScroll.Visible = false;
+            hScroll.Visible = false;
+            int width = Width - (vScroll.Visible ? vScroll.Width : 0) - 1;
+            int height = Height - HeadHeight - (hScroll.Visible ? hScroll.Height : 0) - 1;
+            Rectangle head = new Rectangle(0, 0, width, HeadHeight);
+            Rectangle field = new Rectangle(0, HeadHeight, width, height);
             Rectangle border = new Rectangle(0, 0, Width - 1, Height - 1);
 
-            g.FillRectangle(new SolidBrush(BackColor), head);
-            g.DrawLine(Pens.Gray, 0, hh - 1, width, hh - 1);
-            g.FillRectangle(Brushes.White, field);
-            //g.DrawRectangle(Pens.Black, field);
 
-            int x = 0;
-            foreach (Column col in Columns)
+            g.FillRectangle(Brushes.White, field);
+            //g.FillRectangle(Brushes.LightGreen, field);
+
+
+            //Рисование шапки, если стиль - таблица
+            if (Style == Styles.Table)
             {
-                Rectangle h = new Rectangle(x, 0, col.Width, hh);
-                g.DrawString(col.Text, Font, Brushes.Black, h, format);
-                g.DrawLine(Pens.Gray, x + col.Width - 1, 0, x + col.Width - 1, hh - 1);
-                g.DrawLine(Pens.LightGray, x + col.Width - 1, hh, x + col.Width - 1, Height - 18);
-                x += col.Width;
-                //Cursor = Cursors.VSplit;
+                g.FillRectangle(new SolidBrush(BackColor), head);
+                g.DrawLine(Pens.Gray, 0, HeadHeight - 1, width - 1, HeadHeight - 1);
+
+                int x = 0;
+                foreach (Column col in Columns)
+                {
+                    Rectangle h = new Rectangle(x, 0, col.Width, HeadHeight);
+                    g.DrawString(col.Text, Font, Brushes.Black, h, format);
+                    g.DrawLine(Pens.Gray, x + col.Width - 1, 0, x + col.Width - 1, HeadHeight - 1);
+                    g.DrawLine(Pens.LightGray, x + col.Width - 1, HeadHeight, x + col.Width - 1, HeadHeight + height - 1);
+                    x += col.Width;
+                    //Cursor = Cursors.VSplit;
+                }
             }
-            Draw?.Invoke(g);
+
+
+            //Draw?.Invoke(g); //Вызвать рисование пользователем
             g.DrawRectangle(Pens.Black, border);
         }
 

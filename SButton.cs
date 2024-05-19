@@ -17,7 +17,6 @@ namespace ControlTest
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         [Bindable(true)]
-        
         public override string Text { get; set; }
         
         StringFormat format = new StringFormat();

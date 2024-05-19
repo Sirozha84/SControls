@@ -14,7 +14,7 @@ namespace SControls
         public Column()
         {
             Text = "Колонка";
-            Width = 50;
+            Width = 60;
         }
         public Column(string text, int width)
         {
