@@ -49,6 +49,7 @@
             this.vScroll.Name = "vScroll";
             this.vScroll.Size = new System.Drawing.Size(17, 228);
             this.vScroll.TabIndex = 2;
+            this.vScroll.ValueChanged += new System.EventHandler(this.vScroll_ValueChanged);
             // 
             // SList
             // 
