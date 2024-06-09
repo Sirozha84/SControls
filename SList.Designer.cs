@@ -40,6 +40,7 @@
             this.hScroll.Name = "hScroll";
             this.hScroll.Size = new System.Drawing.Size(364, 17);
             this.hScroll.TabIndex = 0;
+            this.hScroll.ValueChanged += new System.EventHandler(this.hScrolling);
             // 
             // vScroll
             // 
@@ -49,7 +50,7 @@
             this.vScroll.Name = "vScroll";
             this.vScroll.Size = new System.Drawing.Size(17, 228);
             this.vScroll.TabIndex = 2;
-            this.vScroll.ValueChanged += new System.EventHandler(this.vScroll_ValueChanged);
+            this.vScroll.ValueChanged += new System.EventHandler(this.vScrolling);
             // 
             // SList
             // 
