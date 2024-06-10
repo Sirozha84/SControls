@@ -57,7 +57,7 @@ namespace SControls
         int width;          // Ширина видимого поля
         int height;         // Высота видимого поля (без шапки)
         int itemWidth;      // Ширина элемента
-        int itemHeidht;     // Высота элемента
+        int itemHeight;     // Высота элемента
 
         public SList()
         {
@@ -76,47 +76,38 @@ namespace SControls
 
         protected override void OnResize(EventArgs e)
         {
+            //ScrollType = ScrollTypes.ByString;
             //Style = Styles.Icons;
             //ItemsCount = 1;
             base.OnResize(e);
 
-            headHeight = (Style == Styles.Table ? HeadHeight : 0);
-            width = Width - (vScroll.Visible ? vScroll.Width : 0) - 1;
-            height = Height - headHeight - (hScroll.Visible ? hScroll.Height : 0) - 1;
 
-            int w = 0;
-            int h = 0;
-            int sv = 0;     // Количество видимых строк
+            //Вычиление размеров всего полотна данных
+            int w;
+            int h;
             int sc = 0;     // Количество строк всего
             if (Style == Styles.Table)
             {
                 itemWidth = 0;
                 foreach (Column col in Columns)
                     itemWidth += col.Width;
-                itemHeidht = TabStringHeight;
-                sv = height / TabStringHeight;
+                itemHeight = TabStringHeight;
                 sc = Items.Count;
-                w = itemWidth;
-                h = sc * TabStringHeight + HeadHeight;
             }
             if (Style == Styles.Lines)
             {
                 itemWidth = LineWidth;
-                itemHeidht = TabStringHeight;
-                sv = height / LineHeight;
+                itemHeight = TabStringHeight;
                 sc = ItemsCount;
-                w = LineWidth;
-                h = sc * LineHeight;
             }
             if (Style == Styles.Icons)
             {
                 itemWidth = IconWight;
-                itemHeidht = IconHeight;
-                sv = height / IconHeight;
+                itemHeight = IconHeight;
                 sc = (int)Math.Ceiling((double)ItemsCount / (width - vScroll.Width) / IconWight);
-                w = 0;
-                h = sc * IconHeight;
-            }            
+            }
+            w = itemWidth;
+            h = sc * itemHeight;
             bool vs = true;
             bool hs = true;
             if (w < Width - vScroll.Width) hs = false;
@@ -126,19 +117,26 @@ namespace SControls
             hScroll.Width = Width - (vs ? vScroll.Width : 0) - 2;
             vScroll.Visible = vs;
             hScroll.Visible = hs;
+            headHeight = (Style == Styles.Table ? HeadHeight : 0);
+
+            width = Width - (vScroll.Visible ? vScroll.Width : 0);// - 1;
+            height = Height - headHeight - (hScroll.Visible ? hScroll.Height : 0);// - 1;
+            if (width < 0) width = 0;
+            if (height < 0) height = 0;
+            
             if (vs)
             {
                 if (ScrollType == ScrollTypes.ByString)
                 {
                     vScroll.Maximum = sc - 1;
                     vScroll.SmallChange = 1;
-                    vScroll.LargeChange = sv;
+                    vScroll.LargeChange = 1;
                 }
                 if (ScrollType == ScrollTypes.ByPixel)
                 {
-                    vScroll.Maximum = (sc - 1) * itemHeidht;
-                    vScroll.SmallChange = itemHeidht;
-                    vScroll.LargeChange = sv * itemHeidht;
+                    vScroll.Maximum = sc * itemHeight;
+                    vScroll.SmallChange = itemHeight;
+                    vScroll.LargeChange = height;
                 }
             }
             else
@@ -148,7 +146,7 @@ namespace SControls
             if (hs)
             {
                 hScroll.Maximum = w;
-                hScroll.SmallChange = 8;
+                hScroll.SmallChange = 16;
                 hScroll.LargeChange = width;
             }
             else
@@ -173,22 +171,21 @@ namespace SControls
             //g.DrawString(vScroll.Value.ToString()+" - "+ vScroll.LargeChange.ToString()+" - " + vScroll.Maximum.ToString(), Font, Brushes.Black, 30, 30);
             //g.DrawString(hScroll.Value.ToString()+" - "+ hScroll.LargeChange.ToString()+" - " + hScroll.Maximum.ToString(), Font, Brushes.Black, 30, 40);
             int ys = headHeight;
-            //foreach (SListItem item in Items)
-            int first = vScroll.Value / itemHeidht;//  (ScrollType == ScrollTypes.ByString ? itemHeidht : 1);
-            for (int i = first; i < first + height / itemHeidht + 2; i++)
+            int first = vScroll.Value / itemHeight;//  (ScrollType == ScrollTypes.ByString ? itemHeidht : 1);
+            for (int i = first; i < first + height / itemHeight + 2; i++)
             {
                 if (i < Items.Count)
                 {
-                    int y = ys - vScroll.Value * (ScrollType == ScrollTypes.ByString ? itemHeidht : 1) + i * itemHeidht;
+                    int y = ys - vScroll.Value * (ScrollType == ScrollTypes.ByString ? itemHeight : 1) + i * itemHeight;
                     int x = -hScroll.Value;
                     for (int j = 0; j < Columns.Count; j++)
                     {
-                        //if (y>30)
-                        g.DrawString(Items[i].Text[j], Font, Brushes.Black, x, y);
+                        Rectangle cell = new Rectangle(x, y, Columns[j].Width - 1, itemHeight - 1);
+                        g.DrawString(Items[i].Text[j], Font, Brushes.Black, cell, format);
+                        g.DrawRectangle(Pens.Black, cell);
                         x += Columns[j].Width;
                     }
                 }
-                //ys += itemHeidht;
             }
 
 
@@ -204,7 +201,7 @@ namespace SControls
                     Rectangle h = new Rectangle(x - hScroll.Value, 0, col.Width, headHeight);
                     g.DrawString(col.Text, Font, Brushes.Black, h, format);
                     g.DrawLine(Pens.Gray, x - hScroll.Value + col.Width - 1, 0, x - hScroll.Value + col.Width - 1, headHeight - 1);
-                    g.DrawLine(Pens.LightGray, x - hScroll.Value + col.Width - 1, headHeight, x - hScroll.Value + col.Width - 1, headHeight + height - 1);
+                    //g.DrawLine(Pens.LightGray, x - hScroll.Value + col.Width - 1, headHeight, x - hScroll.Value + col.Width - 1, headHeight + height - 1);
                     x += col.Width;
                     //Cursor = Cursors.VSplit;
                 }
