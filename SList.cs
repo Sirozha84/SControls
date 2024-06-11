@@ -40,10 +40,10 @@ namespace SControls
         public int TabStringHeight { get; set; } = 24;
 
         [Browsable(true)]
-        public int LineWidth { get; set; } = 128;
+        public int LineWidth { get; set; } = 300;
 
         [Browsable(true)]
-        public int LineHeight { get; set; } = 48;
+        public int LineHeight { get; set; } = 64;
 
         [Browsable(true)]
         public int IconWight { get; set; } = 64;
@@ -77,10 +77,9 @@ namespace SControls
         protected override void OnResize(EventArgs e)
         {
             //ScrollType = ScrollTypes.ByString;
-            //Style = Styles.Icons;
-            //ItemsCount = 1;
+            Style = Styles.Lines;
+            ItemsCount = 50;
             base.OnResize(e);
-
 
             //Вычиление размеров всего полотна данных
             int w;
@@ -104,33 +103,37 @@ namespace SControls
             {
                 itemWidth = IconWight;
                 itemHeight = IconHeight;
-                sc = (int)Math.Ceiling((double)ItemsCount / (width - vScroll.Width) / IconWight);
+                sc = (int)Math.Ceiling((double)ItemsCount / (Width - vScroll.Width) / IconWight);
             }
             w = itemWidth;
             h = sc * itemHeight;
+            
+            // Включение/выключение скроллбаров
             bool vs = true;
             bool hs = true;
             if (w < Width - vScroll.Width) hs = false;
             if (h < Height - hScroll.Height) vs = false;
-            if (itemWidth < Width & h < Height) { vs = false; hs = false; }
+            if (w < Width & h < Height) { vs = false; hs = false; }
             vScroll.Height = Height - (hs ? hScroll.Height : 0) - 2;
             hScroll.Width = Width - (vs ? vScroll.Width : 0) - 2;
             vScroll.Visible = vs;
             hScroll.Visible = hs;
-            headHeight = (Style == Styles.Table ? HeadHeight : 0);
 
-            width = Width - (vScroll.Visible ? vScroll.Width : 0);// - 1;
-            height = Height - headHeight - (hScroll.Visible ? hScroll.Height : 0);// - 1;
+            // Вычисление размеров видимого поля
+            headHeight = (Style == Styles.Table ? HeadHeight : 0);
+            width = Width - (vs ? vScroll.Width : 0);
+            height = Height - headHeight - (hs ? hScroll.Height : 0);
             if (width < 0) width = 0;
             if (height < 0) height = 0;
             
+            // Задание параметров скроллбаров
             if (vs)
             {
                 if (ScrollType == ScrollTypes.ByString)
                 {
                     vScroll.Maximum = sc - 1;
                     vScroll.SmallChange = 1;
-                    vScroll.LargeChange = 1;
+                    vScroll.LargeChange = height / itemHeight;
                 }
                 if (ScrollType == ScrollTypes.ByPixel)
                 {
@@ -154,6 +157,13 @@ namespace SControls
                 hScroll.Value = 0;
             }
 
+            // Коррекция размера линии в зависимости от размера поля
+            if (Style == Styles.Lines)
+            {
+                if (itemWidth > LineWidth & itemWidth < w) 
+                    itemWidth = w;
+            }
+
             Invalidate();
         }
         protected override void OnPaint(PaintEventArgs e)
@@ -170,24 +180,36 @@ namespace SControls
             //Draw?.Invoke(g); //Вызвать рисование пользователем
             //g.DrawString(vScroll.Value.ToString()+" - "+ vScroll.LargeChange.ToString()+" - " + vScroll.Maximum.ToString(), Font, Brushes.Black, 30, 30);
             //g.DrawString(hScroll.Value.ToString()+" - "+ hScroll.LargeChange.ToString()+" - " + hScroll.Maximum.ToString(), Font, Brushes.Black, 30, 40);
+            //g.DrawString(vScroll.Visible.ToString()+" - "+ vScroll.Width.ToString()+" - ", Font, Brushes.Black, 30, 40);
+            //g.DrawString(width.ToString()+" - "+ Width.ToString()+" - ", Font, Brushes.Black, 30, 60);
             int ys = headHeight;
-            int first = vScroll.Value / itemHeight;//  (ScrollType == ScrollTypes.ByString ? itemHeidht : 1);
+            int first = vScroll.Value / (ScrollType == ScrollTypes.ByPixel ? itemHeight : 1);
             for (int i = first; i < first + height / itemHeight + 2; i++)
             {
                 if (i < Items.Count)
                 {
                     int y = ys - vScroll.Value * (ScrollType == ScrollTypes.ByString ? itemHeight : 1) + i * itemHeight;
                     int x = -hScroll.Value;
-                    for (int j = 0; j < Columns.Count; j++)
+                    if (Style == Styles.Table)
                     {
-                        Rectangle cell = new Rectangle(x, y, Columns[j].Width - 1, itemHeight - 1);
-                        g.DrawString(Items[i].Text[j], Font, Brushes.Black, cell, format);
-                        g.DrawRectangle(Pens.Black, cell);
-                        x += Columns[j].Width;
+                        for (int j = 0; j < Columns.Count; j++)
+                        {
+                            Rectangle cell = new Rectangle(x, y, Columns[j].Width - 1, itemHeight - 1);
+                            g.DrawString(Items[i].Text[j], Font, Brushes.Black, cell, format);
+                            g.DrawRectangle(Pens.Black, cell);
+                            x += Columns[j].Width;
+                        }
                     }
+                    if (Style == Styles.Lines)
+                    {
+                        //Rectangle cell = new Rectangle(x, y, itemWidth - 1, itemHeight - 1);
+                        Rectangle cell = new Rectangle(x, y, width - 2, itemHeight - 1);
+                        g.DrawString(i.ToString(), Font, Brushes.Black, cell, format);
+                        g.DrawRectangle(Pens.Black, cell);
+                    }
+
                 }
             }
-
 
             //Рисование шапки, если стиль - таблица
             if (Style == Styles.Table)
