@@ -40,7 +40,7 @@ namespace SControls
         public int TabStringHeight { get; set; } = 24;
 
         [Browsable(true)]
-        public int LineWidth { get; set; } = 300;
+        public int LineWidth { get; set; } = 256;
 
         [Browsable(true)]
         public int LineHeight { get; set; } = 64;
@@ -77,8 +77,9 @@ namespace SControls
         protected override void OnResize(EventArgs e)
         {
             //ScrollType = ScrollTypes.ByString;
-            Style = Styles.Lines;
-            ItemsCount = 50;
+            //Style = Styles.Lines;
+            //Style = Styles.Icons;
+            //ItemsCount = 2;
             base.OnResize(e);
 
             //Вычиление размеров всего полотна данных
@@ -96,14 +97,15 @@ namespace SControls
             if (Style == Styles.Lines)
             {
                 itemWidth = LineWidth;
-                itemHeight = TabStringHeight;
+                itemHeight = LineHeight;
                 sc = ItemsCount;
             }
             if (Style == Styles.Icons)
             {
                 itemWidth = IconWight;
                 itemHeight = IconHeight;
-                sc = (int)Math.Ceiling((double)ItemsCount / (Width - vScroll.Width) / IconWight);
+                sc = (int)Math.Ceiling((double)ItemsCount / ((Width - vScroll.Width) / IconWight));
+                if (sc < 0) sc = ItemsCount;
             }
             w = itemWidth;
             h = sc * itemHeight;
@@ -125,7 +127,11 @@ namespace SControls
             height = Height - headHeight - (hs ? hScroll.Height : 0);
             if (width < 0) width = 0;
             if (height < 0) height = 0;
-            
+
+            // Коррекция размеров элементов
+            if (Style == Styles.Lines && itemWidth < width) itemWidth = width - 1;
+            if (Style == Styles.Icons && IconWight < width) itemWidth = (width - 1) / (width / IconWight);
+
             // Задание параметров скроллбаров
             if (vs)
             {
@@ -157,13 +163,6 @@ namespace SControls
                 hScroll.Value = 0;
             }
 
-            // Коррекция размера линии в зависимости от размера поля
-            if (Style == Styles.Lines)
-            {
-                if (itemWidth > LineWidth & itemWidth < w) 
-                    itemWidth = w;
-            }
-
             Invalidate();
         }
         protected override void OnPaint(PaintEventArgs e)
@@ -175,41 +174,54 @@ namespace SControls
 
             Graphics g = e.Graphics;
             g.FillRectangle(Brushes.White, field);
-            //g.FillRectangle(Brushes.LightGreen, field);
 
             //Draw?.Invoke(g); //Вызвать рисование пользователем
-            //g.DrawString(vScroll.Value.ToString()+" - "+ vScroll.LargeChange.ToString()+" - " + vScroll.Maximum.ToString(), Font, Brushes.Black, 30, 30);
-            //g.DrawString(hScroll.Value.ToString()+" - "+ hScroll.LargeChange.ToString()+" - " + hScroll.Maximum.ToString(), Font, Brushes.Black, 30, 40);
-            //g.DrawString(vScroll.Visible.ToString()+" - "+ vScroll.Width.ToString()+" - ", Font, Brushes.Black, 30, 40);
-            //g.DrawString(width.ToString()+" - "+ Width.ToString()+" - ", Font, Brushes.Black, 30, 60);
             int ys = headHeight;
             int first = vScroll.Value / (ScrollType == ScrollTypes.ByPixel ? itemHeight : 1);
             for (int i = first; i < first + height / itemHeight + 2; i++)
             {
-                if (i < Items.Count)
+                int y = ys - vScroll.Value * (ScrollType == ScrollTypes.ByString ? itemHeight : 1) + i * itemHeight;
+                int x = -hScroll.Value;
+                if (Style == Styles.Table)
                 {
-                    int y = ys - vScroll.Value * (ScrollType == ScrollTypes.ByString ? itemHeight : 1) + i * itemHeight;
-                    int x = -hScroll.Value;
-                    if (Style == Styles.Table)
+                    if (i < Items.Count)
                     {
                         for (int j = 0; j < Columns.Count; j++)
                         {
                             Rectangle cell = new Rectangle(x, y, Columns[j].Width - 1, itemHeight - 1);
                             g.DrawString(Items[i].Text[j], Font, Brushes.Black, cell, format);
-                            g.DrawRectangle(Pens.Black, cell);
+                            //g.DrawRectangle(Pens.Black, cell);
                             x += Columns[j].Width;
                         }
                     }
-                    if (Style == Styles.Lines)
-                    {
-                        //Rectangle cell = new Rectangle(x, y, itemWidth - 1, itemHeight - 1);
-                        Rectangle cell = new Rectangle(x, y, width - 2, itemHeight - 1);
-                        g.DrawString(i.ToString(), Font, Brushes.Black, cell, format);
-                        g.DrawRectangle(Pens.Black, cell);
-                    }
-
                 }
-            }
+                if (Style == Styles.Lines)
+                {
+                    if (i < ItemsCount)
+                    {
+                        Rectangle cell = new Rectangle(x, y, itemWidth - 1, itemHeight - 1);
+                        g.DrawString(i.ToString(), Font, Brushes.Black, cell, format);
+                        //g.DrawRectangle(Pens.Black, cell);
+                    }
+                }
+                if (Style == Styles.Icons)
+                {
+                    int c = width / itemWidth;
+                    if (c < 1) c = 1;
+                    int n = i * c;
+                    for (int j = 0; j < c; j++)
+                    {
+                        if (n < ItemsCount)
+                        {
+                            Rectangle cell = new Rectangle(x, y, itemWidth - 1, itemHeight - 1);
+                            g.DrawString(n.ToString(), Font, Brushes.Black, cell, format);
+                            //g.DrawRectangle(Pens.Black, cell);
+                        }
+                        n++;
+                        x += itemWidth;
+                    }
+                }
+            }        
 
             //Рисование шапки, если стиль - таблица
             if (Style == Styles.Table)
@@ -223,7 +235,7 @@ namespace SControls
                     Rectangle h = new Rectangle(x - hScroll.Value, 0, col.Width, headHeight);
                     g.DrawString(col.Text, Font, Brushes.Black, h, format);
                     g.DrawLine(Pens.Gray, x - hScroll.Value + col.Width - 1, 0, x - hScroll.Value + col.Width - 1, headHeight - 1);
-                    //g.DrawLine(Pens.LightGray, x - hScroll.Value + col.Width - 1, headHeight, x - hScroll.Value + col.Width - 1, headHeight + height - 1);
+                    g.DrawLine(Pens.LightGray, x - hScroll.Value + col.Width - 1, headHeight, x - hScroll.Value + col.Width - 1, headHeight + height - 1);
                     x += col.Width;
                     //Cursor = Cursors.VSplit;
                 }
