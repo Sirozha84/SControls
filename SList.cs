@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.Common;
 using static System.Windows.Forms.LinkLabel;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace SControls
 {
@@ -79,7 +80,7 @@ namespace SControls
             //ScrollType = ScrollTypes.ByString;
             //Style = Styles.Lines;
             //Style = Styles.Icons;
-            //ItemsCount = 2;
+            ItemsCount = 10;
             base.OnResize(e);
 
             //Вычиление размеров всего полотна данных
@@ -114,7 +115,7 @@ namespace SControls
             bool vs = true;
             bool hs = true;
             if (w < Width - vScroll.Width) hs = false;
-            if (h < Height - hScroll.Height) vs = false;
+            if (h < Height - hScroll.Height - headHeight) vs = false;
             if (w < Width & h < Height) { vs = false; hs = false; }
             vScroll.Height = Height - (hs ? hScroll.Height : 0) - 2;
             hScroll.Width = Width - (vs ? vScroll.Width : 0) - 2;
@@ -147,6 +148,8 @@ namespace SControls
                     vScroll.SmallChange = itemHeight;
                     vScroll.LargeChange = height;
                 }
+                if (vScroll.Value > vScroll.Maximum - vScroll.LargeChange + 1)
+                    vScroll.Value = vScroll.Maximum >= vScroll.LargeChange ? vScroll.Maximum - vScroll.LargeChange + 1: 0;
             }
             else
             {
@@ -162,7 +165,16 @@ namespace SControls
             {
                 hScroll.Value = 0;
             }
-
+            if (vs & hs)
+            {
+                panel.Left = vScroll.Left;
+                panel.Top = hScroll.Top;
+                panel.Width = vScroll.Width;
+                panel.Height = hScroll.Height;
+                panel.Visible = true;
+            }
+            else
+                panel.Visible = false;
             Invalidate();
         }
         protected override void OnPaint(PaintEventArgs e)

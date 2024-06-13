@@ -30,6 +30,7 @@
         {
             this.hScroll = new System.Windows.Forms.HScrollBar();
             this.vScroll = new System.Windows.Forms.VScrollBar();
+            this.panel = new System.Windows.Forms.Panel();
             this.SuspendLayout();
             // 
             // hScroll
@@ -52,10 +53,20 @@
             this.vScroll.TabIndex = 2;
             this.vScroll.ValueChanged += new System.EventHandler(this.vScrolling);
             // 
+            // panel
+            // 
+            this.panel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.panel.Location = new System.Drawing.Point(365, 229);
+            this.panel.Name = "panel";
+            this.panel.Size = new System.Drawing.Size(18, 18);
+            this.panel.TabIndex = 3;
+            this.panel.Visible = false;
+            // 
             // SList
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.panel);
             this.Controls.Add(this.vScroll);
             this.Controls.Add(this.hScroll);
             this.Name = "SList";
@@ -68,5 +79,6 @@
 
         private System.Windows.Forms.HScrollBar hScroll;
         private System.Windows.Forms.VScrollBar vScroll;
+        private System.Windows.Forms.Panel panel;
     }
 }
