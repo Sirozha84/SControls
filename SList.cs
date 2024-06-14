@@ -84,7 +84,7 @@ namespace SControls
         {
             //ScrollType = ScrollTypes.ByString;
             //Style = Styles.Lines;
-            //Style = Styles.Icons;
+            Style = Styles.Icons;
             ItemsCount = 10;
             base.OnResize(e);
 
@@ -208,7 +208,6 @@ namespace SControls
                             Rectangle cell = new Rectangle(x, y, Columns[j].Width - 1, itemHeight - 1);
                             if (i == select) g.FillRectangle(SystemBrushes.Highlight, cell); 
                             g.DrawString(Items[i].Text[j], Font, (i == select ? SystemBrushes.HighlightText : SystemBrushes.ControlText), cell, format);
-                            //g.DrawRectangle(Pens.Black, cell);
                             x += Columns[j].Width;
                         }
                     }
@@ -218,8 +217,8 @@ namespace SControls
                     if (i < ItemsCount)
                     {
                         Rectangle cell = new Rectangle(x, y, itemWidth - 1, itemHeight - 1);
-                        g.DrawString(i.ToString(), Font, Brushes.Black, cell, format);
-                        //g.DrawRectangle(Pens.Black, cell);
+                        if (i == select) g.FillRectangle(SystemBrushes.Highlight, cell);
+                        g.DrawString(i.ToString(), Font, (i == select ? SystemBrushes.HighlightText : SystemBrushes.ControlText), cell, format);
                     }
                 }
                 if (Style == Styles.Icons)
@@ -232,8 +231,8 @@ namespace SControls
                         if (n < ItemsCount)
                         {
                             Rectangle cell = new Rectangle(x, y, itemWidth - 1, itemHeight - 1);
-                            g.DrawString(n.ToString(), Font, Brushes.Black, cell, format);
-                            //g.DrawRectangle(Pens.Black, cell);
+                            if (n == select) g.FillRectangle(SystemBrushes.Highlight, cell);
+                            g.DrawString(n.ToString(), Font, (n == select ? SystemBrushes.HighlightText : SystemBrushes.ControlText), cell, format);
                         }
                         n++;
                         x += itemWidth;
@@ -303,14 +302,23 @@ namespace SControls
 
         private void SList_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
         {
+            int maxc = 0;
+            int maxr = 0;
             if (Style == Styles.Table & Items.Count > 0)
+                maxr = Items.Count - 1;
+            if (Style == Styles.Lines & ItemsCount > 0)
+                maxr = ItemsCount - 1;
+            if (Style == Styles.Icons & ItemsCount > 0)
             {
-                int max = Items.Count - 1;
-                if (e.KeyCode == Keys.Up) select = select < 0 ? 0 : select-1;
-                if (e.KeyCode == Keys.Down) select = select > max ? 0 : select+1;
-                if (select < 0) select = 0;
-                if (select > max) select = max;
+                maxc = width / itemWidth;
+                maxr = (int)Math.Ceiling((double)ItemsCount / maxc);
             }
+
+            if (e.KeyCode == Keys.Up) select = select < 0 ? 0 : select-1;
+            if (e.KeyCode == Keys.Down) select = select > maxr ? 0 : select+1;
+            if (select < 0) select = 0;
+            if (select > maxr) select = maxr;
+            
             if (e.KeyCode == Keys.Up | e.KeyCode == Keys.Down) arows = true;
             if (e.KeyCode == Keys.Left | e.KeyCode == Keys.Right) arows = true;
 
