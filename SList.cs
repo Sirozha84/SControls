@@ -52,6 +52,9 @@ namespace SControls
         [Browsable(true)]
         public int IconHeight { get; set; } = 64;
 
+        [Browsable(true)]
+        public bool TabStop { get; set; } = true;
+
         public event DrawDelegate Draw = null;
         private StringFormat format = new StringFormat();
         int headHeight;     // Высота шапки
@@ -59,6 +62,8 @@ namespace SControls
         int height;         // Высота видимого поля (без шапки)
         int itemWidth;      // Ширина элемента
         int itemHeight;     // Высота элемента
+        int select = -1;    // Выбранный элемент (последнее нажатие)
+        bool arows = false; // Пользователь нажимает на стрелки
 
         public SList()
         {
@@ -201,7 +206,8 @@ namespace SControls
                         for (int j = 0; j < Columns.Count; j++)
                         {
                             Rectangle cell = new Rectangle(x, y, Columns[j].Width - 1, itemHeight - 1);
-                            g.DrawString(Items[i].Text[j], Font, Brushes.Black, cell, format);
+                            if (i == select) g.FillRectangle(SystemBrushes.Highlight, cell); 
+                            g.DrawString(Items[i].Text[j], Font, (i == select ? SystemBrushes.HighlightText : SystemBrushes.ControlText), cell, format);
                             //g.DrawRectangle(Pens.Black, cell);
                             x += Columns[j].Width;
                         }
@@ -254,15 +260,23 @@ namespace SControls
             }
 
             //Внешняя рамка
-            g.DrawRectangle(Pens.Black, border);
+            g.DrawRectangle(Focused? Pens.Black: Pens.Gray, border);
         }
 
-
-        protected override void OnChangeUICues(UICuesEventArgs e)
+        protected override void OnGotFocus(EventArgs e)
         {
-            base.OnChangeUICues(e);
+            base.OnGotFocus(e);
             Invalidate();
         }
+
+        protected override void OnLostFocus(EventArgs e)
+        {
+            base.OnLostFocus(e);
+            if (arows) Focus();
+            arows = false;
+            Invalidate();
+        }
+
 
         private void vScrolling(object sender, EventArgs e)
         {
@@ -274,6 +288,33 @@ namespace SControls
             Invalidate();
         }
 
+        private void SList_KeyDown(object sender, KeyEventArgs e)
+        {
+        }
 
+        private void SList_MouseDown(object sender, MouseEventArgs e)
+        {
+
+        }
+
+        private void hScroll_Enter(object sender, EventArgs e)
+        {
+        }
+
+        private void SList_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        {
+            if (Style == Styles.Table & Items.Count > 0)
+            {
+                int max = Items.Count - 1;
+                if (e.KeyCode == Keys.Up) select = select < 0 ? 0 : select-1;
+                if (e.KeyCode == Keys.Down) select = select > max ? 0 : select+1;
+                if (select < 0) select = 0;
+                if (select > max) select = max;
+            }
+            if (e.KeyCode == Keys.Up | e.KeyCode == Keys.Down) arows = true;
+            if (e.KeyCode == Keys.Left | e.KeyCode == Keys.Right) arows = true;
+
+            Invalidate();
+        }
     }
 }

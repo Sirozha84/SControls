@@ -41,8 +41,19 @@ namespace ControlTest
             if (mouse) g.FillRectangle(Brushes.White, rect);
             if (push) g.FillRectangle(Brushes.LightGray, rect);
             g.DrawRectangle(Pens.Black, rect0);
-            g.DrawRectangle(Pens.Black, rect);
+            g.DrawRectangle(Focused ? Pens.Black:Pens.Gray, rect);
             g.DrawString(Text, Font, new SolidBrush(ForeColor), rect, format);
+        }
+        protected override void OnGotFocus(EventArgs e)
+        {
+            base.OnGotFocus(e);
+            Invalidate();
+        }
+
+        protected override void OnLostFocus(EventArgs e)
+        {
+            base.OnLostFocus(e);
+            Invalidate();
         }
 
         protected override void OnMouseEnter(EventArgs e)
