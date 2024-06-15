@@ -81,8 +81,8 @@ namespace SControls
         protected override void OnResize(EventArgs e)
         {
             //ScrollType = ScrollTypes.ByString;
-            //Style = Styles.Lines;
-            Style = Styles.Icons;
+            Style = Styles.Lines;
+            //Style = Styles.Icons;
             ItemsCount = 10;
 
             base.OnResize(e);
@@ -351,6 +351,16 @@ namespace SControls
             }
 
             Invalidate();
+        }
+
+        protected override void OnMouseWheel(MouseEventArgs e)
+        {
+            base.OnMouseWheel(e);
+
+            int i = vScroll.Value - e.Delta;
+            if (i < 0) i = 0;
+            if (i > vScroll.Maximum - vScroll.LargeChange) i = vScroll.Maximum - vScroll.LargeChange;
+            vScroll.Value = i;
         }
     }
 }
