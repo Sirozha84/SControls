@@ -330,13 +330,27 @@ namespace SControls
                 if (vScroll.Value < i * itemHeight - min) vScroll.Value = i * itemHeight - min;
             }
 
-
             Invalidate();
         }
 
         private void SList_MouseDown(object sender, MouseEventArgs e)
         {
+            int max = (Style == Styles.Table ? Items.Count : ItemsCount) - 1;
+            int cols = Style == Styles.Icons ? width / itemWidth : 1;
+            select = (e.Y + vScroll.Value - headHeight) / itemHeight * cols + e.X / itemWidth;
+            if (select > max) select = -1;
 
+            //Корректировка скролл-баров
+            int i = Style == Styles.Icons ? select / cols : select;
+            
+            if (select >= 0)
+            {
+                if (vScroll.Value > i * itemHeight) vScroll.Value = i * itemHeight;
+                int min = height - itemHeight - 1;
+                if (vScroll.Value < i * itemHeight - min) vScroll.Value = i * itemHeight - min;
+            }
+
+            Invalidate();
         }
     }
 }
