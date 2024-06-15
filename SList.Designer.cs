@@ -42,7 +42,6 @@
             this.hScroll.Size = new System.Drawing.Size(364, 17);
             this.hScroll.TabIndex = 0;
             this.hScroll.ValueChanged += new System.EventHandler(this.hScrolling);
-            this.hScroll.Enter += new System.EventHandler(this.hScroll_Enter);
             // 
             // vScroll
             // 
@@ -72,7 +71,6 @@
             this.Controls.Add(this.hScroll);
             this.Name = "SList";
             this.Size = new System.Drawing.Size(383, 247);
-            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.SList_KeyDown);
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.SList_MouseDown);
             this.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.SList_PreviewKeyDown);
             this.ResumeLayout(false);

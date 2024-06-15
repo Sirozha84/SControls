@@ -52,18 +52,16 @@ namespace SControls
         [Browsable(true)]
         public int IconHeight { get; set; } = 64;
 
-        [Browsable(true)]
-        public bool TabStop { get; set; } = true;
 
         public event DrawDelegate Draw = null;
         private StringFormat format = new StringFormat();
-        int headHeight;     // Высота шапки
-        int width;          // Ширина видимого поля
-        int height;         // Высота видимого поля (без шапки)
-        int itemWidth;      // Ширина элемента
-        int itemHeight;     // Высота элемента
-        int select = -1;    // Выбранный элемент (последнее нажатие)
-        bool arows = false; // Пользователь нажимает на стрелки
+        int headHeight;         // Высота шапки
+        int width;              // Ширина видимого поля
+        int height;             // Высота видимого поля (без шапки)
+        int itemWidth;          // Ширина элемента
+        int itemHeight;         // Высота элемента
+        int select = -1;        // Выбранный элемент (последнее нажатие)
+        bool arrows = false;    // Пользователь нажимает на стрелки
 
         public SList()
         {
@@ -86,35 +84,36 @@ namespace SControls
             //Style = Styles.Lines;
             Style = Styles.Icons;
             ItemsCount = 10;
+
             base.OnResize(e);
 
             //Вычиление размеров всего полотна данных
             int w;
             int h;
-            int sc = 0;     // Количество строк всего
+            int rows = 0;   // Количество строк
             if (Style == Styles.Table)
             {
                 itemWidth = 0;
                 foreach (Column col in Columns)
                     itemWidth += col.Width;
                 itemHeight = TabStringHeight;
-                sc = Items.Count;
+                rows = Items.Count;
             }
             if (Style == Styles.Lines)
             {
                 itemWidth = LineWidth;
                 itemHeight = LineHeight;
-                sc = ItemsCount;
+                rows = ItemsCount;
             }
             if (Style == Styles.Icons)
             {
                 itemWidth = IconWight;
                 itemHeight = IconHeight;
-                sc = (int)Math.Ceiling((double)ItemsCount / ((Width - vScroll.Width) / IconWight));
-                if (sc < 0) sc = ItemsCount;
+                rows = (int)Math.Ceiling((double)ItemsCount / ((Width - vScroll.Width) / IconWight));
+                if (rows < 0) rows = ItemsCount;
             }
             w = itemWidth;
-            h = sc * itemHeight;
+            h = rows * itemHeight;
             
             // Включение/выключение скроллбаров
             bool vs = true;
@@ -143,13 +142,13 @@ namespace SControls
             {
                 if (ScrollType == ScrollTypes.ByString)
                 {
-                    vScroll.Maximum = sc - 1;
+                    vScroll.Maximum = rows - 1;
                     vScroll.SmallChange = 1;
                     vScroll.LargeChange = height / itemHeight;
                 }
                 if (ScrollType == ScrollTypes.ByPixel)
                 {
-                    vScroll.Maximum = sc * itemHeight;
+                    vScroll.Maximum = rows * itemHeight;
                     vScroll.SmallChange = itemHeight;
                     vScroll.LargeChange = height;
                 }
@@ -180,11 +179,13 @@ namespace SControls
             }
             else
                 panel.Visible = false;
+            
             Invalidate();
         }
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
+
             Rectangle head = new Rectangle(0, 0, width, headHeight);
             Rectangle field = new Rectangle(0, headHeight, width, height);
             Rectangle border = new Rectangle(0, 0, Width - 1, Height - 1);
@@ -219,6 +220,7 @@ namespace SControls
                         Rectangle cell = new Rectangle(x, y, itemWidth - 1, itemHeight - 1);
                         if (i == select) g.FillRectangle(SystemBrushes.Highlight, cell);
                         g.DrawString(i.ToString(), Font, (i == select ? SystemBrushes.HighlightText : SystemBrushes.ControlText), cell, format);
+                        
                     }
                 }
                 if (Style == Styles.Icons)
@@ -271,8 +273,8 @@ namespace SControls
         protected override void OnLostFocus(EventArgs e)
         {
             base.OnLostFocus(e);
-            if (arows) Focus();
-            arows = false;
+            if (arrows) Focus();
+            arrows = false;
             Invalidate();
         }
 
@@ -287,42 +289,54 @@ namespace SControls
             Invalidate();
         }
 
-        private void SList_KeyDown(object sender, KeyEventArgs e)
+        private void SList_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
         {
+            int max = (Style == Styles.Table ? Items.Count : ItemsCount) - 1;
+            int ud = 1;
+            int lr = 0;
+            if (Style == Styles.Icons)
+            {
+                ud = width / itemWidth;
+                lr = 1;
+            }
+            int pg = ud * (height / itemHeight);
+
+            arrows = e.KeyCode == Keys.Up | e.KeyCode == Keys.Down | e.KeyCode == Keys.Left | e.KeyCode == Keys.Right |
+                e.KeyCode == Keys.Home | e.KeyCode == Keys.End | e.KeyCode == Keys.PageUp | e.KeyCode == Keys.PageDown;
+
+            if (arrows & select < 0) select = 0;
+
+            if (e.KeyCode == Keys.Up) select -= ud;
+            if (e.KeyCode == Keys.Down) select += ud;
+            if (e.KeyCode == Keys.Left) select -= lr;
+            if (e.KeyCode == Keys.Right) select += lr;
+            if (e.KeyCode == Keys.Home) select = 0;
+            if (e.KeyCode == Keys.End) select = max;
+            if (e.KeyCode == Keys.PageUp) select -= pg;
+            if (e.KeyCode == Keys.PageDown) select += pg;
+
+            if (arrows)
+            {
+                if (select < 0) select = 0;
+                if (select > max) select = max;
+            }
+
+            //Корректировка скролл-баров
+            int i = Style == Styles.Icons ? select / ud : select;
+            if (select >= 0)
+            {
+                if (vScroll.Value > i * itemHeight) vScroll.Value = i * itemHeight;
+                int min = height - itemHeight - 1;
+                if (vScroll.Value < i * itemHeight - min) vScroll.Value = i * itemHeight - min;
+            }
+
+
+            Invalidate();
         }
 
         private void SList_MouseDown(object sender, MouseEventArgs e)
         {
 
-        }
-
-        private void hScroll_Enter(object sender, EventArgs e)
-        {
-        }
-
-        private void SList_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
-        {
-            int maxc = 0;
-            int maxr = 0;
-            if (Style == Styles.Table & Items.Count > 0)
-                maxr = Items.Count - 1;
-            if (Style == Styles.Lines & ItemsCount > 0)
-                maxr = ItemsCount - 1;
-            if (Style == Styles.Icons & ItemsCount > 0)
-            {
-                maxc = width / itemWidth;
-                maxr = (int)Math.Ceiling((double)ItemsCount / maxc);
-            }
-
-            if (e.KeyCode == Keys.Up) select = select < 0 ? 0 : select-1;
-            if (e.KeyCode == Keys.Down) select = select > maxr ? 0 : select+1;
-            if (select < 0) select = 0;
-            if (select > maxr) select = maxr;
-            
-            if (e.KeyCode == Keys.Up | e.KeyCode == Keys.Down) arows = true;
-            if (e.KeyCode == Keys.Left | e.KeyCode == Keys.Right) arows = true;
-
-            Invalidate();
         }
     }
 }
