@@ -51,7 +51,7 @@ namespace SControls
 
         [Browsable(true)]
         public int IconHeight { get; set; } = 64;
-
+        public List<int> SelectedItems { get; set; } = new List<int>();
 
         public event DrawDelegate Draw = null;
         private StringFormat format = new StringFormat();
@@ -61,7 +61,10 @@ namespace SControls
         int itemWidth;          // Ширина элемента
         int itemHeight;         // Высота элемента
         int select = -1;        // Выбранный элемент (последнее нажатие)
+        int firstSelect = -1;   // Первый выбранный элемент
         bool arrows = false;    // Пользователь нажимает на стрелки
+        bool shift = false;     // Пользователь жмёт Shift
+        bool ctrl = false;      // Пользователь жмёт Control
 
         public SList()
         {
@@ -81,7 +84,7 @@ namespace SControls
         protected override void OnResize(EventArgs e)
         {
             //ScrollType = ScrollTypes.ByString;
-            Style = Styles.Lines;
+            //Style = Styles.Lines;
             //Style = Styles.Icons;
             ItemsCount = 10;
 
@@ -207,8 +210,9 @@ namespace SControls
                         for (int j = 0; j < Columns.Count; j++)
                         {
                             Rectangle cell = new Rectangle(x, y, Columns[j].Width - 1, itemHeight - 1);
-                            if (i == select) g.FillRectangle(SystemBrushes.Highlight, cell); 
-                            g.DrawString(Items[i].Text[j], Font, (i == select ? SystemBrushes.HighlightText : SystemBrushes.ControlText), cell, format);
+                            bool sel = SelectedItems.IndexOf(i) >= 0;
+                            if (sel) g.FillRectangle(SystemBrushes.Highlight, cell); 
+                            g.DrawString(Items[i].Text[j], Font, (sel ? SystemBrushes.HighlightText : SystemBrushes.ControlText), cell, format);
                             x += Columns[j].Width;
                         }
                     }
@@ -218,8 +222,9 @@ namespace SControls
                     if (i < ItemsCount)
                     {
                         Rectangle cell = new Rectangle(x, y, itemWidth - 1, itemHeight - 1);
-                        if (i == select) g.FillRectangle(SystemBrushes.Highlight, cell);
-                        g.DrawString(i.ToString(), Font, (i == select ? SystemBrushes.HighlightText : SystemBrushes.ControlText), cell, format);
+                        bool sel = SelectedItems.IndexOf(i) >= 0;
+                        if (sel) g.FillRectangle(SystemBrushes.Highlight, cell);
+                        g.DrawString(i.ToString(), Font, (sel ? SystemBrushes.HighlightText : SystemBrushes.ControlText), cell, format);
                         
                     }
                 }
@@ -233,8 +238,9 @@ namespace SControls
                         if (n < ItemsCount)
                         {
                             Rectangle cell = new Rectangle(x, y, itemWidth - 1, itemHeight - 1);
-                            if (n == select) g.FillRectangle(SystemBrushes.Highlight, cell);
-                            g.DrawString(n.ToString(), Font, (n == select ? SystemBrushes.HighlightText : SystemBrushes.ControlText), cell, format);
+                            bool sel = SelectedItems.IndexOf(n) >= 0;
+                            if (sel) g.FillRectangle(SystemBrushes.Highlight, cell);
+                            g.DrawString(n.ToString(), Font, (sel ? SystemBrushes.HighlightText : SystemBrushes.ControlText), cell, format);
                         }
                         n++;
                         x += itemWidth;
@@ -303,6 +309,8 @@ namespace SControls
 
             arrows = e.KeyCode == Keys.Up | e.KeyCode == Keys.Down | e.KeyCode == Keys.Left | e.KeyCode == Keys.Right |
                 e.KeyCode == Keys.Home | e.KeyCode == Keys.End | e.KeyCode == Keys.PageUp | e.KeyCode == Keys.PageDown;
+            if (e.KeyCode == Keys.ShiftKey) shift = true;
+            if (e.KeyCode == Keys.ControlKey) ctrl = true;
 
             if (arrows & select < 0) select = 0;
 
@@ -319,18 +327,26 @@ namespace SControls
             {
                 if (select < 0) select = 0;
                 if (select > max) select = max;
-            }
+                ctrl = false;
+                Selection();
 
-            //Корректировка скролл-баров
-            int i = Style == Styles.Icons ? select / ud : select;
-            if (select >= 0)
-            {
-                if (vScroll.Value > i * itemHeight) vScroll.Value = i * itemHeight;
-                int min = height - itemHeight - 1;
-                if (vScroll.Value < i * itemHeight - min) vScroll.Value = i * itemHeight - min;
-            }
 
+                //Корректировка скролл-баров
+                int i = Style == Styles.Icons ? select / ud : select;
+                if (select >= 0)
+                {
+                    if (vScroll.Value > i * itemHeight) vScroll.Value = i * itemHeight;
+                    int min = height - itemHeight - 1;
+                    if (vScroll.Value < i * itemHeight - min) vScroll.Value = i * itemHeight - min;
+                }
+            }
             Invalidate();
+        }
+
+        private void SList_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.ShiftKey) shift = false;
+            if (e.KeyCode == Keys.ControlKey) ctrl = false;
         }
 
         private void SList_MouseDown(object sender, MouseEventArgs e)
@@ -339,6 +355,7 @@ namespace SControls
             int cols = Style == Styles.Icons ? width / itemWidth : 1;
             select = (e.Y + vScroll.Value - headHeight) / itemHeight * cols + e.X / itemWidth;
             if (select > max) select = -1;
+            Selection();
 
             //Корректировка скролл-баров
             int i = Style == Styles.Icons ? select / cols : select;
@@ -362,5 +379,41 @@ namespace SControls
             if (i > vScroll.Maximum - vScroll.LargeChange) i = vScroll.Maximum - vScroll.LargeChange;
             vScroll.Value = i;
         }
+
+        void Selection()
+        {
+            if (shift & ctrl) return;
+            if (!ctrl) SelectedItems.Clear();
+            if (select < 0)
+            {
+                firstSelect = -1;
+                return;
+            }
+
+            if (shift)
+            {
+                if (firstSelect < 0) firstSelect = 0;
+                if (firstSelect < select)
+                    for (int j = firstSelect; j <= select; j++)
+                        SelectedItems.Add(j);
+                else
+                    for (int j = firstSelect; j >= select; j--)
+                        SelectedItems.Add(j);
+            }
+            if (ctrl)
+            {
+                firstSelect = select;
+                if (SelectedItems.IndexOf(select) < 0)
+                    SelectedItems.Add(select);
+                else
+                    SelectedItems.Remove(select);
+            }
+            if (!shift & !ctrl) 
+            {
+                firstSelect = select;
+                SelectedItems.Add(select);
+            }
+        }
+
     }
 }

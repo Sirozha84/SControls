@@ -71,6 +71,7 @@
             this.Controls.Add(this.hScroll);
             this.Name = "SList";
             this.Size = new System.Drawing.Size(383, 247);
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.SList_KeyUp);
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.SList_MouseDown);
             this.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.SList_PreviewKeyDown);
             this.ResumeLayout(false);
